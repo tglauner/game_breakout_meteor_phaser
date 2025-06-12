@@ -11,6 +11,8 @@ function preload() {
 var ball;
 var paddle;
 var bricks;
+var rockets;
+var rocketTexture;
 
 var ballOnPaddle = true;
 
@@ -70,6 +72,24 @@ function create() {
 
     ball.events.onOutOfBounds.add(ballLost, this);
 
+    // create simple rocket texture
+    rocketTexture = game.add.bitmapData(10, 20);
+    var ctx = rocketTexture.ctx;
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(2, 8, 6, 12);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(5, 0);
+    ctx.lineTo(1, 8);
+    ctx.lineTo(9, 8);
+    ctx.fill();
+
+    rockets = game.add.group();
+    rockets.enableBody = true;
+    rockets.physicsBodyType = Phaser.Physics.ARCADE;
+
+    game.time.events.loop(Phaser.Timer.SECOND * 3, launchRocket, this);
+
     scoreText = game.add.text(32, 550, 'score: 0', { font: "20px Arial", fill: "#ffffff", align: "left" });
     livesText = game.add.text(680, 550, 'lives: 3', { font: "20px Arial", fill: "#ffffff", align: "left" });
     introText = game.add.text(game.world.centerX, 400, '- click to start -', { font: "40px Arial", fill: "#ffffff", align: "center" });
@@ -103,6 +123,7 @@ function update () {
     {
         game.physics.arcade.collide(ball, paddle, ballHitPaddle, null, this);
         game.physics.arcade.collide(ball, bricks, ballHitBrick, null, this);
+        game.physics.arcade.overlap(paddle, rockets, rocketHitPaddle, null, this);
     }
 
 }
@@ -201,4 +222,21 @@ function ballHitPaddle (_ball, _paddle) {
         _ball.body.velocity.x = 2 + Math.random() * 8;
     }
 
+}
+
+function launchRocket() {
+    var x = game.rnd.between(20, game.width - 20);
+    var rocket = rockets.create(x, -20, rocketTexture);
+    rocket.body.velocity.y = 150;
+    rocket.checkWorldBounds = true;
+    rocket.outOfBoundsKill = true;
+}
+
+function rocketHitPaddle (_paddle, _rocket) {
+    _rocket.kill();
+    lives--;
+    livesText.text = 'lives: ' + lives;
+    if (lives <= 0) {
+        gameOver();
+    }
 }
